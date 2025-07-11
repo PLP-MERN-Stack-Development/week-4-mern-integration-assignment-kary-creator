@@ -11,6 +11,7 @@ const path = require('path');
 const postRoutes = require('./routes/posts');
 const categoryRoutes = require('./routes/categories');
 const authRoutes = require('./routes/auth');
+const commentRoutes = require('./routes/comments');
 
 // Load environment variables
 dotenv.config();
@@ -25,7 +26,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', require('express').static(require('path').join(__dirname, 'uploads')));
 
 // Log requests in development mode
 if (process.env.NODE_ENV === 'development') {
@@ -39,6 +40,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api/posts', postRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -48,25 +50,16 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.statusCode || 500).json({
-    success: false,
-    error: err.message || 'Server Error',
-  });
+  res.status(500).json({ error: 'Something went wrong!' });
 });
 
 // Connect to MongoDB and start server
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('Failed to connect to MongoDB', err);
-    process.exit(1);
-  });
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected'))
+.catch((err) => console.error('MongoDB connection error:', err));
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
